@@ -5,6 +5,10 @@
 *	
 *-------------------------------------------------------------------------*/
 
+.acf-address-map-imported-notice {
+    margin-bottom: 15px;
+}
+
 .acf-address-map {
 	position: relative;
 	border: #DFDFDF solid 1px;

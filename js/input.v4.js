@@ -1,8 +1,10 @@
-(function($) {
+(function($, acf) {
 /* **********************************************
      Begin address-map.js
 ********************************************** */
+
 	acf.fields.address_map = {
+
 		$el: null,
 		$input: null,
 		o: {},
@@ -10,6 +12,7 @@
 		geocoder: false,
 		map: false,
 		maps: {},
+
 		set: function(o) {
 			// merge in new option
 			$.extend(this, o);
@@ -24,6 +27,7 @@
 			// return this for chaining
 			return this;
 		},
+
 		init: function() {
 			// geocode
 			if (!this.geocoder) {
@@ -37,214 +41,136 @@
 			}
 			this.render();
 		},
+
 		render: function() {
 			// reference
-			var _this = this,
-				_$el = this.$el;
+			var _this = this;
+
 			// vars
 			var args = {
-				zoom: parseInt(this.o.zoom),
-				center: new google.maps.LatLng(this.o.lat, this.o.lng),
+				zoom: parseInt(_this.o.zoom),
+				center: new google.maps.LatLng(_this.o.lat, _this.o.lng),
 				mapTypeId: google.maps.MapTypeId.ROADMAP
 			};
+
 			// create map	        	
-			this.map = new google.maps.Map(this.$el.find('.canvas')[0], args);
-			// add search
-			var autocomplete = new google.maps.places.Autocomplete(this.$el.find('.search')[0]);
-			console.log(autocomplete);
-			autocomplete.map = this.map;
-			autocomplete.bindTo('bounds', this.map);
+			_this.map = new google.maps.Map(_this.$el.find('.canvas')[0], args);
+
 			// add dummy marker
-			this.map.marker = new google.maps.Marker({
+			_this.map.marker = new google.maps.Marker({
 				draggable: true,
 				raiseOnDrag: true,
-				map: this.map,
+				map: _this.map
 			});
+
 			// add references
-			this.map.$el = this.$el;
-			// value exists?
-			var lat = this.$el.find('.latitude').val(),
-				lng = this.$el.find('.longitude').val();
+			_this.map.$el = _this.$el;
+
+			// lat/lng exists?
+			var lat = _this.$el.find('.latitude').val(),
+				lng = _this.$el.find('.longitude').val();
+
 			if (lat && lng) {
-				this.update(lat, lng).center();
+				_this.update(lat, lng).center();
+        if(!_this.$el.find('.search').val()) _this.sync();
+			} else if(_this.$el.find('.search').val() != '') {
+        // No lat/lng but there is a geolocatable search string so we're importing then
+        _this.search(_this.$el.find('.search').val());
+      }
+			
+			if(_this.$el.find('.search').val() == ''){
+				_this.$el.removeClass('active');
 			}
-			
-			if(this.$el.find('.search').val() == ''){
-				this.$el.removeClass('active');
-			}
-			
-			// events
-			google.maps.event.addListener(autocomplete, 'place_changed', function(e) {				
-			
-				// reference
-				var $el = this.map.$el;
-				var place = autocomplete.getPlace();
-				console.log(place);				
-				
-				var addressObject = {
-					data: {
-						number: '',
-						street: '',
-						unit: '',
-						city: '',
-						state: '',
-						zip: '',
-						country: '',
-					},
-					format: function() {
-						var output = {}
-						output.address_line_1 = [this.data.number, this.data.street].join(' ')
-						output.address_line_2 = this.data.unit || '';
-						output.city = this.data.city || '';
-						output.state = this.data.state || '';
-						output.zip = this.data.zip || '';
-						output.country = this.data.country || '';
-						return output;
-					}
-				}
-				var inputForm = {
-					street_number: {
-						mapTo: 'number',
-						use: 'long_name'
-					},
-					subpremise: {
-						mapTo: 'unit',
-						use: 'long_name',
-					},
-					route: {
-						mapTo: 'street',
-						use: 'long_name'
-					},
-					locality: {
-						mapTo: 'city',
-						use: 'long_name'
-					},
-					country: {
-						mapTo: 'country',
-						use: 'long_name',
-					},
-					administrative_area_level_1: {
-						mapTo: 'state',
-						use: 'short_name',
-					},
-					postal_code: {
-						mapTo: 'zip',
-						use: 'long_name'
-					}
-				}
-				for (var k in place.address_components) {
-					if (typeof(inputForm[place.address_components[k].types[0]]) !== 'undefined') {
-						addressObject.data[inputForm[place.address_components[k].types[0]].mapTo] = place.address_components[k][inputForm[place.address_components[k].types[0]].use];
-					}
-				}
-				var addressFinal = addressObject.format();
-				
-				
-				
-				if($el.find('.address_one').val() !== ''){
-					
-					if(confirm('Changes to address information with be overwritten with data from Google Maps')){
-						update_fields();
-						
-						$el.find('.search').blur();
-						
-					}
-					
-					
-				} else {
-					update_fields();
-				}
-				
-				function update_fields() {
-					$el.find('.business_name').val((function() {
-						if (place.name !== addressFinal.address_line_1) {
-							return place.name;
-						} else {
-							return '';
-						}
-					}));
-					$el.find('.address_one').val(addressFinal.address_line_1);
-					$el.find('.address_two').val(addressFinal.address_line_2);
-					$el.find('.city').val(addressFinal.city);
-					$el.find('.state').val(addressFinal.state);
-					$el.find('.country').val(addressFinal.country);
-					$el.find('.zip').val(addressFinal.zip);
-					$el.find('.latitude').val(place.geometry.location.k);
-					$el.find('.longitude').val(place.geometry.location.A);					
-					$el.find('input.google-map').val(place.url);
-					
-					if(place.formatted_phone_number){
-						$el.find('.phone').val(place.formatted_phone_number);
-					}
-					
-					if(place.website){
-						$el.find('.website').val(place.website);
-					}
-					
-					// manually update address
-					var address = $el.find('.search').val();
-					
-					$el.find('.input-address').val(address);
-					$el.find('.title h4').text(address);
-					// vars
-					
-					// validate
-					if (place.geometry) {
-						var lat = place.geometry.location.lat(),
-							lng = place.geometry.location.lng();
-						_this.set({
-							$el: $el
-						}).update(lat, lng).center();
-					} else {
-						// client hit enter, manulaly get the place
-						_this.geocoder.geocode({
-							'address': address
-						}, function(results, status) {
-							// validate
-							if (status != google.maps.GeocoderStatus.OK) {
-								console.log('Geocoder failed due to: ' + status);
-								return;
-							}
-							if (!results[0]) {
-								console.log('No results found');
-								return;
-							}
-							// get place
-							place = results[0];
-							var lat = place.geometry.location.lat(),
-								lng = place.geometry.location.lng();
-							_this.set({
-								$el: $el
-							}).update(lat, lng).center();
-						});
-					}
-				}
-				
+
+      // add search
+      var autocomplete = new google.maps.places.Autocomplete(_this.$el.find('.search')[0]);
+
+      autocomplete.map = _this.map;
+      autocomplete.bindTo('bounds', _this.map);
+
+			google.maps.event.addListener(autocomplete, 'place_changed', function(e) {
+        _this.search(autocomplete.getPlace());
 			});
+
 			google.maps.event.addListener(this.map.marker, 'dragend', function() {
-				// reference
-				var $el = this.map.$el;
-				// vars
-				var position = this.map.marker.getPosition(),
-					lat = position.lat(),
-					lng = position.lng();
-				_this.set({
-					$el: $el
-				}).update(lat, lng).sync();
+				var position = _this.map.marker.getPosition();
+
+				_this.set({$el: _this.map.$el}).update(position.lat(), position.lng()).sync();
 			});
 			google.maps.event.addListener(this.map, 'click', function(e) {
-				// reference
-				var $el = this.$el;
-				// vars
-				var lat = e.latLng.lat(),
-					lng = e.latLng.lng();
-				_this.set({
-					$el: $el
-				}).update(lat, lng).sync();
+        var position = e.latLng;
+
+        _this.set({$el: _this.$el}).update(position.lat(), position.lng()).sync();
 			});
+
 			// add to maps
 			this.maps[this.o.id] = this.map;
 		},
+
+    search: function(place){
+      var _this = this;
+      console.log('Searching:', place);
+      _this.resolve(place, function(place) {
+        _this.update_fields(new acf.fields.address_map.Address(place));
+        var mapName = _this.$el.find('.search').val();
+        _this.$el.find('.title h4').text(mapName);
+        _this.$el.find('.input-address').val(mapName).trigger('change');
+      });
+    },
+
+    /**
+     *
+     * @param {acf.fields.address_map.Address} address
+     */
+    update_fields: function(address) {
+      if(address.name !== false) this.$el.find('.business_name').val(address.name);
+      if(address.phone !== false) this.$el.find('.phone').val(address.phone);
+      if(address.website !== false) this.$el.find('.website').val(address.website);
+      this.$el.find('.address_one').val(address.address_line_1);
+      this.$el.find('.address_two').val(address.address_line_2);
+      this.$el.find('.city').val(address.city);
+      this.$el.find('.state').val(address.state);
+      this.$el.find('.country').val(address.country);
+      this.$el.find('.zip').val(address.zip);
+      this.$el.find('.latitude').val(address.lat);
+      this.$el.find('.longitude').val(address.lng);
+      this.$el.find('input.google-map').val(address.url);
+
+      if(address.lat != 0 && address.lng != 0) this.set({$el: this.$el}).update(address.lat, address.lng).center();
+    },
+
+    resolve: function(place, cb){
+      if(typeof cb != 'function') cb = function(){};
+
+      var _this = this;
+
+      if(typeof place == 'string') place = {name: place};
+
+      if(typeof place == 'object' && typeof place.geometry != 'object' && _this.geocoder) {
+        // client hit enter, manulaly get the place
+        _this.geocoder.geocode({
+          'address': place.name
+        }, function(results, status) {
+          if (status != google.maps.GeocoderStatus.OK) {
+            if(status == google.maps.GeocoderStatus.OVER_QUERY_LIMIT) {
+              alert("You're going to fast! Try again in a few seconds.");
+            } else {
+              alert("An unknown error occurred when communicating with Google Maps.");
+            }
+            return;
+          }
+          if(results.length == 0) {
+            alert("No results found for the address you entered.");
+            return;
+          }
+          cb(results[0]);
+        });
+      } else {
+        cb(place);
+      }
+      return _this;
+    },
+
 		update: function(lat, lng) {
 			// vars
 			var latlng = new google.maps.LatLng(lat, lng);
@@ -264,6 +190,7 @@
 			// return for chaining
 			return this;
 		},
+
 		center: function() {
 			// vars
 			var position = this.map.marker.getPosition(),
@@ -278,34 +205,39 @@
 			// set center of map
 			this.map.setCenter(latlng);
 		},
+
 		sync: function() {
-			// reference
-			var $el = this.$el;
-			// vars
-			var position = this.map.marker.getPosition(),
+      var _this = this;
+
+			var position = _this.map.marker.getPosition(),
 				latlng = new google.maps.LatLng(position.lat(), position.lng());
-			this.geocoder.geocode({
+
+      // Reverse geocode
+			_this.geocoder.geocode({
 				'latLng': latlng
 			}, function(results, status) {
-				// validate
-				if (status != google.maps.GeocoderStatus.OK) {
-					console.log('Geocoder failed due to: ' + status);
-					return;
-				}
-				if (!results[0]) {
-					console.log('No results found');
-					return;
-				}
-				// get location
-				var location = results[0];
-				// update h4
-				$el.find('.title h4').text(location.formatted_address);
-				// update input
-				$el.find('.input-address').val(location.formatted_address).trigger('change');
+        if (status != google.maps.GeocoderStatus.OK) {
+          if(status == google.maps.GeocoderStatus.OVER_QUERY_LIMIT) {
+            alert("You're going to fast! Try again in a few seconds.");
+          } else {
+            alert("An unknown error occurred when communicating with Google Maps.");
+          }
+          return;
+        }
+        if(results.length == 0) {
+          alert("No results found for the address you entered.");
+          return;
+        }
+
+        var place = results[0];
+        _this.update_fields(new acf.fields.address_map.Address(place));
+        _this.$el.find('.title h4').text(place.formatted_address);
+        _this.$el.find('.input-address').val(place.formatted_address).trigger('change');
 			});
-			// return for chaining
+
 			return this;
 		},
+
 		locate: function() {
 			// reference
 			var _this = this,
@@ -324,9 +256,10 @@
 					lng = position.coords.longitude;
 				_this.set({
 					$el: _$el
-				}).update(lat, lng).sync().center();
+				}).update(lat, lng).sync();
 			});
 		},
+
 		clear: function() {
 			// update class
 			this.$el.removeClass('active');
@@ -339,6 +272,7 @@
 			// hide marker
 			this.map.marker.setVisible(false);
 		},
+
 		edit: function() {
 			// update class
 			this.$el.removeClass('active');
@@ -346,6 +280,7 @@
 			var val = this.$el.find('.title h4').text();
 			this.$el.find('.search').val(val).focus();
 		},
+
 		refresh: function() {
 			// trigger resize on div
 			google.maps.event.trigger(this.map, 'resize');
@@ -353,6 +288,105 @@
 			this.center();
 		}
 	};
+
+
+  /**
+   * Represents an address
+   * @constructor
+   * @param {google.maps.places.PlaceResult} place
+   */
+  acf.fields.address_map.Address = function(place){
+    if(typeof place == 'string') place = {name: place};
+    this.parse(place);
+  };
+
+  acf.fields.address_map.Address.input_map = {
+    street_number: {
+      to: 'number',
+      use: 'long_name'
+    },
+    subpremise: {
+      to: 'unit',
+      use: 'long_name'
+    },
+    route: {
+      to: 'street',
+      use: 'long_name'
+    },
+    locality: {
+      to: 'city',
+      use: 'long_name'
+    },
+    country: {
+      to: 'country',
+      use: 'long_name'
+    },
+    administrative_area_level_1: {
+      to: 'state',
+      use: 'short_name'
+    },
+    postal_code: {
+      to: 'zip',
+      use: 'long_name'
+    }
+  };
+
+  acf.fields.address_map.Address.prototype.okay = false;
+
+  acf.fields.address_map.Address.prototype.name = false;
+  acf.fields.address_map.Address.prototype.phone = false;
+  acf.fields.address_map.Address.prototype.website = false;
+  acf.fields.address_map.Address.prototype.address_line_1 = '';
+  acf.fields.address_map.Address.prototype.address_line_2 = '';
+  acf.fields.address_map.Address.prototype.city = '';
+  acf.fields.address_map.Address.prototype.state = '';
+  acf.fields.address_map.Address.prototype.zip = '';
+  acf.fields.address_map.Address.prototype.country = '';
+  acf.fields.address_map.Address.prototype.lat = 0;
+  acf.fields.address_map.Address.prototype.lng = 0;
+  acf.fields.address_map.Address.prototype.url = '';
+  acf.fields.address_map.Address.prototype.formatted_address = '';
+
+  /**
+   * Parse out a place into the address
+   * @param {google.maps.places.PlaceResult} place
+   */
+  acf.fields.address_map.Address.prototype.parse = function(place) {
+    if(typeof place != 'object' || typeof place.address_components != 'object') return;
+
+    var data = {
+      number: '',
+      street: '',
+      unit: '',
+      city: '',
+      state: '',
+      zip: '',
+      country: ''
+    };
+
+    for(var k in place.address_components) {
+      if(place.address_components.hasOwnProperty(k) &&
+          typeof(acf.fields.address_map.Address.input_map[place.address_components[k].types[0]]) !== 'undefined') {
+        var map = acf.fields.address_map.Address.input_map[place.address_components[k].types[0]];
+        data[map.to] = place.address_components[k][map.use];
+      }
+    }
+
+    this.address_line_1 = [data.number, data.street].join(' ');
+    this.address_line_2 = data.unit || '';
+    this.city = data.city || '';
+    this.state = data.state || '';
+    this.zip = data.zip || '';
+    this.country = data.country || '';
+    this.lat = place.geometry.location.lat();
+    this.lng = place.geometry.location.lng();
+    this.url = 'http://maps.google.com/?ll=' + this.lat + ',' + this.lng;
+    if(place.name && place.name !== this.address_line_1)  this.name               = place.name;
+    if(place.formatted_phone_number)                      this.phone              = place.formatted_phone_number;
+    if(place.website)                                     this.website            = place.website;
+    if(place.formatted_address)                           this.formatted_address  = place.formatted_address;
+  };
+
 	/*
 	 *  acf/setup_fields
 	 *
@@ -372,39 +406,21 @@
 		if (!$fields.exists()) {
 			return;
 		}
-		// validate google
-		if (typeof google === 'undefined') {
-			$.getScript('https://www.google.com/jsapi', function() {
-				google.load('maps', '3', {
-					other_params: 'sensor=false&libraries=places',
-					callback: function() {
-						$fields.each(function() {
-							acf.fields.address_map.set({
-								$el: $(this)
-							}).init();
-						});
-					}
-				});
-			});
-		} else {
-			google.load('maps', '3', {
-				other_params: 'sensor=false&libraries=places',
-				callback: function() {
-					$fields.each(function() {
-						acf.fields.address_map.set({
-							$el: $(this)
-						}).init();
-					});
-				}
-			});
-		}
-		$('.acf-address-map .address .location td input').on('focus', function() {
-			var val = $(this).val();
-			console.log(val);
-			$(this).on('blur', function() {
-				$(this).val(val);
-			})
-		});
+    var load_google_maps_api_v3 = function(){
+      google.load('maps', '3', {
+        other_params: 'sensor=false&libraries=places',
+        callback: function() {
+          $fields.each(function() {
+            acf.fields.address_map.set({
+              $el: $(this)
+            }).init();
+          });
+        }
+      });
+    };
+		// load google maps api
+		if (typeof google == 'undefined') $.getScript('https://www.google.com/jsapi', load_google_maps_api_v3);
+		else load_google_maps_api_v3();
 	});
 	
 	/*
@@ -438,9 +454,10 @@
 			$el: $(this).closest('.acf-address-map')
 		}).edit();
 	});
-	$(document).on('keydown', '.acf-address-map .search', function(e) {
+	$(document).on('keypress', '.acf-address-map .search', function(e) {
 		// prevent form from submitting
-		if (e.which == 13) {
+		if (e.which == 13 || e.keyCode == 13) {
+      e.stopPropagation();
 			return false;
 		}
 	});
@@ -465,4 +482,4 @@
 		}
 	});
 
-})(jQuery);
+})(jQuery, acf);

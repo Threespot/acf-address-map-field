@@ -31,19 +31,16 @@ class acf_field_address_map extends acf_field {
 			'locating'			=>	__("Locating",'acf'),
 			'browser_support'	=>	__("Sorry, this browser does not support geolocation",'acf'),
 		);
-		
-		
+
 		// do not delete!
     	parent::__construct();
-    	
-    	
+
     	// settings
 		$this->settings = array(
 			'path' => apply_filters('acf/helpers/get_path', __FILE__),
 			'dir' => apply_filters('acf/helpers/get_dir', __FILE__),
-			'version' => '1.0.0'
+			'version' => '1.1.0'
 		);
-
 	}
 	
 	
@@ -61,14 +58,10 @@ class acf_field_address_map extends acf_field {
 
 	function input_admin_enqueue_scripts()
 	{
-		// Note: This function can be removed if not used
-		
-		
 		// register ACF scripts
 		wp_register_script( 'acf-input-address_map', $this->settings['dir'] . 'js/input.v4.js', array('acf-input'), $this->settings['version'] );
 		wp_register_style( 'acf-input-address_map', $this->settings['dir'] . 'css/input.v4.css', array('acf-input'), $this->settings['version'] ); 
-		
-		
+
 		// scripts
 		wp_enqueue_script(array(
 			'acf-input-address_map',	
@@ -78,8 +71,6 @@ class acf_field_address_map extends acf_field {
 		wp_enqueue_style(array(
 			'acf-input-address_map',	
 		));
-		
-		
 	}
 	
 	
@@ -100,13 +91,20 @@ class acf_field_address_map extends acf_field {
 	{
 		// require the googlemaps JS ( this script is now lazy loaded via JS )
 		//wp_enqueue_script('acf-googlemaps');
-		
-		
+
+        $imported = false;
+
 		// default value
-		if( !is_array($field['value']) )
-		{
+		if( !is_array($field['value']) ) {
 			$field['value'] = array();
-		}
+		} elseif(isset($field['value']['address']) && !is_array($field['value']['address'])) {
+            // Data exists from built-in address field, unset lat/lng and search for address
+            $field['value']['map_name'] = $field['value']['address'];
+            unset($field['value']['lat']);
+            unset($field['value']['lng']);
+            unset($field['value']['address']);
+            $imported = true;
+        }
 		
 		$field['value'] = wp_parse_args($field['value'], array(
 			'map_name' 	=> '',
@@ -165,9 +163,18 @@ class acf_field_address_map extends acf_field {
 		}
 		
 		?>
-		
+
+        <?php if($imported): ?>
+        <div class="acf-address-map-imported-notice">
+            <strong>
+                Location imported from existing info entered through the old field. Double-check that the info
+                below was imported correctly!
+            </strong>
+        </div>
+        <?php endif; ?>
+
 		<div class="acf-address-map <?php echo $o['class']; ?>" <?php echo $atts; ?>>
-			
+
 			<div style="display:none;">
 				<?php /* foreach( $field['value'] as $k => $v ): ?>
 					<input type="hidden" class="input-<?php echo $k; ?>" name="<?php echo esc_attr($field['name']); ?>[<?php echo $k; ?>]" value="<?php echo esc_attr( $v ); ?>" />
@@ -183,7 +190,7 @@ class acf_field_address_map extends acf_field {
 				
 				<div class="no-value">
 					<a href="#" class="acf-sprite-locate ir" title="<?php _e("Find current location",'acf'); ?>">Locate</a>
-					<input type="text" name="<?php echo $field['name'] ?>[map_name]" placeholder="<?php _e("Search for address...",'acf'); ?>" class="search" value="<?php echo $this->cond_display_value($field, ['name']); ?>"/>
+					<input type="text" name="<?php echo $field['name'] ?>[map_name]" placeholder="<?php _e("Search for address...",'acf'); ?>" class="search" value="<?php echo $this->cond_display_value($field, ['map_name']); ?>"/>
 				</div>
 				
 			</div>
@@ -192,6 +199,7 @@ class acf_field_address_map extends acf_field {
 			
 				<table >				
 				<tbody>
+
 				<tr class="name">
 					<td>Business Name</td>
 					<td><input class="business_name" name="<?php echo esc_attr($field['name']); ?>[name]" type="text" value="<?php echo $this->cond_display_value($field, ['name']); ?>"></td>
@@ -245,8 +253,8 @@ class acf_field_address_map extends acf_field {
 				<tr class="location">
 					<td>Location</td>
 					<td>
-						<input name="<?php echo esc_attr($field['name']); ?>[lat]" class="latitude" type="text" value="<?php echo $this->cond_display_value($field, ['lat']); ?>">
-						<input name="<?php echo esc_attr($field['name']); ?>[lng]" class="longitude" type="text" value="<?php echo $this->cond_display_value($field, ['lng']); ?>">
+						<input name="<?php echo esc_attr($field['name']); ?>[lat]" class="latitude" type="text" value="<?php echo $this->cond_display_value($field, ['lat']); ?>" readonly>
+						<input name="<?php echo esc_attr($field['name']); ?>[lng]" class="longitude" type="text" value="<?php echo $this->cond_display_value($field, ['lng']); ?>" readonly>
 					</td>
 				</tr>
 				
