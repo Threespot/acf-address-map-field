@@ -109,7 +109,6 @@
 
     search: function(place){
       var _this = this;
-      console.log('Searching:', place);
       _this.resolve(place, function(place) {
         _this.update_fields(new acf.fields.address_map.Address(place));
         var mapName = _this.$el.find('.search').val();

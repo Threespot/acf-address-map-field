@@ -411,13 +411,14 @@ class acf_field_address_map extends acf_field {
 
 
 		// Note: This function can be removed if not used
-		
-		$output['name'] = $value['name'];
-				
-		
-		$line2 = ($value['address']['line_2']) ? ', ' . $value['address']['line_2'] : '';
-		
-		$output['formatted_address'] = '
+
+        $output = array();
+
+		if(isset($value['name'])) $output['name'] = $value['name'];
+
+		if(isset($value['address']) && is_array($value['address'])) {
+            $line2 = ($value['address']['line_2']) ? ', ' . $value['address']['line_2'] : '';
+            $output['formatted_address'] = '
 		<div itemscope itemtype="http://schema.org/PostalAddress">
 		 <span itemprop="name">'.$value['name'].'</span>
 		 <span itemprop="streetAddress">'.$value['address']['line_1'].$line2.'</span>
@@ -426,22 +427,21 @@ class acf_field_address_map extends acf_field {
 		 <span itemprop="postalCode">'.$value['address']['zip'].'</span>
 		 <span itemprop="addressCountry">'.$value['address']['country'].'</span>
 		</div>';
+        }
+
+        if(isset($value['address'])) $output['address'] = $value['address'];
 		
-		$output['address'] = $value['address'];
-		
-		$output['info'] = $value['info'];
-		
-		$output['position'] = array(
+		if(isset($value['info'])) $output['info'] = $value['info'];
+
+        if(isset($value['lat']) && isset($value['lng'])) $output['position'] = array(
 							'lat' => $value['lat'],
 							'lng' => $value['lng']
 							);
-		
-		
+
 		return $output;
 	}
 	
 }
-
 
 // create field
 new acf_field_address_map();
