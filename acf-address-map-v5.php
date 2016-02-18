@@ -399,7 +399,7 @@ class acf_field_address_map extends acf_field {
 		$line2 = ($value['address']['line_2']) ? ', ' . $value['address']['line_2'] : '';
 		
 		$output['formatted_address'] = '<div itemscope itemtype="http://schema.org/PostalAddress">
-										 <span itemprop="name">'.$value['name'].'</span>
+										 <span itemprop="name">'.(isset($value['name']) ? $value['name'] : '').'</span>
 										 <span itemprop="streetAddress">'.$value['address']['line_1'].$line2.'</span>
 										 <span itemprop="addressLocality">'.$value['address']['city'].'</span>,
 										 <span itemprop="addressRegion">'.$value['address']['state'].'</span>
@@ -409,7 +409,7 @@ class acf_field_address_map extends acf_field {
 		
 		$output['address'] = $value['address'];
 		
-		$output['info'] = $value['info'];
+		$output['info'] = (isset($value['info']) ? $value['info'] : '');
 		
 		$output['position'] = array(
 							'lat' => $value['lat'],
