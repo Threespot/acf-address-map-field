@@ -20,6 +20,9 @@
 		$input : null,
 
 		o : {},
+        api: {
+			libraries:	'places'
+		},
 
 		ready : false,
 		geocoder : false,
@@ -76,8 +79,9 @@
 
 
 			// vars
+            var zoom = this.o.zoom.length > 0  ? parseInt(this.o.zoom) : 10;
 			var args = {
-        		zoom		: parseInt(this.o.zoom),
+        		zoom		: zoom,
         		center		: new google.maps.LatLng(this.o.lat, this.o.lng),
         		mapTypeId	: google.maps.MapTypeId.ROADMAP
         	};
@@ -310,8 +314,8 @@
 
 
 		    // update inputs
-			this.$el.find('.input-lat').val( lat );
-			this.$el.find('.input-lng').val( lng ).trigger('change');
+			this.$el.find('.latitude').val( lat );
+			this.$el.find('.longitude').val( lng ).trigger('change');
 
 
 		    // update marker
@@ -498,7 +502,8 @@
 	acf.add_action('ready append', function( $el ){
 
 		//vars
-		var $fields = acf.get_fields({ type : 'address_map'}, $el);
+		var self = acf.fields.address_map;
+        var $fields = acf.get_fields({ type : 'address_map'}, $el);
 
 
 		// validate
@@ -513,7 +518,7 @@
 		{
 			$.getScript('https://www.google.com/jsapi', function(){
 
-			    google.load('maps', '3', { other_params: 'sensor=false&libraries=places', callback: function(){
+			    google.load('maps', '3', { other_params: $.param(self.api), callback: function(){
 
 			        $fields.each(function(){
 
