@@ -36,7 +36,7 @@ class acf_field_address_map extends acf_field {
 		*  category (string) basic | content | choice | relational | jquery | layout | CUSTOM GROUP NAME
 		*/
 		
-		$this->category = 'jQuery';
+		$this->category = 'jquery';
 		
 		
 		/*
@@ -366,7 +366,48 @@ class acf_field_address_map extends acf_field {
 		
 	}
 		
+    
+    /*
+	*  input_admin_footer()
+	*
+	*  This action is called in the admin_footer action on the edit screen where your field is created.
+	*  Use this action to add CSS and JavaScript to assist your render_field() action.
+	*
+	*  @type	action (admin_footer)
+	*  @since	3.6
+	*  @date	23/01/13
+	*
+	*  @param	n/a
+	*  @return	n/a
+	*/
+    
+    function input_admin_footer() {
+	   	
+	   	// vars
+	   	$api = array(
+			'libraries'		=> 'places',
+			'key'			=> acf_get_setting('google_api_key'),
+			'client'		=> acf_get_setting('google_api_client')
+	   	);
+	   	
+	   	
+	   	// filter
+	   	$api = apply_filters('acf/fields/google_map/api', $api);
+	   	
+	   	
+	   	// remove empty
+	   	if( empty($api['key']) ) unset($api['key']);
+	   	if( empty($api['client']) ) unset($api['client']);
+	   	
+	   	
+        ?>
+        <script type="text/javascript">
+        acf.fields.address_map.api = <?php echo json_encode($api); ?>;
+        </script>
+        <?php
 	
+    }
+    
 	
 	
 	/*
