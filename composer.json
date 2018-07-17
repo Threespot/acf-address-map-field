@@ -12,6 +12,6 @@
      ],
     "license": "GPLv2 or later",
     "require": {
-    "composer/installers": "v1.0.7"
+    "composer/installers": "^1.0"
     }
 }
